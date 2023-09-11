@@ -28,16 +28,16 @@ const (
 	stopArg           = 8
 )
 
-func processArgs() (string, error) {
+func processArgs() (flights.PriceGraphArgs, error) {
 	if len(os.Args) < 5 {
-		return "", errors.New("missing minimum number of args")
+		return flights.PriceGraphArgs{}, errors.New("missing minimum number of args")
 	}
 	args := os.Args[1:]
 	startDate, err := time.Parse(defaultDateFormat, args[startDateArg])
 	endDate, err := time.Parse(defaultDateFormat, args[endDateArg])
 
 	if err != nil {
-		return "", errors.New("unable to process date fields | mm-dd-yyyy")
+		return flights.PriceGraphArgs{}, errors.New("unable to process date fields | mm-dd-yyyy")
 	}
 
 	duration, _ := strconv.Atoi(args[durationArg])
@@ -45,7 +45,7 @@ func processArgs() (string, error) {
 	end := strings.Split(args[endArg], "-")
 
 	if len(start) == 0 || len(end) == 0 {
-		return "", errors.New("need a start and destination city")
+		return flights.PriceGraphArgs{}, errors.New("need a start and destination city")
 	}
 
 	airports := false
@@ -53,20 +53,15 @@ func processArgs() (string, error) {
 		if strings.ToUpper(possibleCity) == possibleCity && len(possibleCity) == 3 {
 			airports = true
 		} else if airports {
-			return "", errors.New("must be all airports in IATA formatting, ie SFO")
+			return flights.PriceGraphArgs{}, errors.New("must be all airports in IATA formatting, ie SFO")
 		}
 	}
 	for _, possibleCity := range end {
 		if strings.ToUpper(possibleCity) == possibleCity && len(possibleCity) == 3 {
 			airports = true
 		} else if airports {
-			return "", errors.New("must be all airports in IATA formatting, ie SFO")
+			return flights.PriceGraphArgs{}, errors.New("must be all airports in IATA formatting, ie SFO")
 		}
-	}
-
-	session, err := flights.New()
-	if err != nil {
-		return "", err
 	}
 
 	options := flights.Options{
@@ -143,9 +138,7 @@ func processArgs() (string, error) {
 		}
 	}
 
-	getCheapestOffers(session, cheapestArgs)
-
-	return "", err
+	return cheapestArgs, nil
 }
 
 func getCheapestOffers(
@@ -227,12 +220,16 @@ func getCheapestOffers(
 }
 
 func main() {
-	t := time.Now()
-
-	_, err := flights.New()
+	cheapestArgs, err := processArgs()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err.Error())
+		return
 	}
 
-	fmt.Println(time.Since(t))
+	session, err := flights.New()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	getCheapestOffers(session, cheapestArgs)
 }
