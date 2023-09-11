@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -141,12 +140,7 @@ func processArgs() (flights.PriceGraphArgs, error) {
 	return cheapestArgs, nil
 }
 
-func getCheapestOffers(
-	session *flights.Session,
-	args flights.PriceGraphArgs,
-) {
-	logger := log.New(os.Stdout, "", 0)
-
+func getCheapestOffers(session *flights.Session, args flights.PriceGraphArgs) {
 	options := args.Options
 
 	priceGraphOffers, err := session.GetPriceGraph(
@@ -154,7 +148,7 @@ func getCheapestOffers(
 		args,
 	)
 	if err != nil {
-		logger.Fatal(err)
+		fmt.Println(err.Error())
 	}
 
 	for _, priceGraphOffer := range priceGraphOffers {
@@ -171,7 +165,7 @@ func getCheapestOffers(
 			},
 		)
 		if err != nil {
-			logger.Fatal(err)
+			fmt.Println(err.Error())
 		}
 
 		var bestOffer flights.FullOffer
@@ -192,10 +186,10 @@ func getCheapestOffers(
 			},
 		)
 		if err != nil {
-			logger.Fatal(err)
+			fmt.Println(err.Error())
 		}
 		if priceRange == nil {
-			logger.Fatal("missing priceRange")
+			fmt.Println(err.Error())
 		}
 
 		if bestOffer.Price < priceRange.Low {
@@ -210,11 +204,11 @@ func getCheapestOffers(
 				},
 			)
 			if err != nil {
-				logger.Fatal(err)
+				fmt.Println(err.Error())
 			}
-			logger.Printf("%s %s\n", bestOffer.StartDate, bestOffer.ReturnDate)
-			logger.Printf("price %d\n", int(bestOffer.Price))
-			logger.Println(url)
+			fmt.Printf("%s %s\n", bestOffer.StartDate, bestOffer.ReturnDate)
+			fmt.Printf("price %d\n", int(bestOffer.Price))
+			fmt.Println(url)
 		}
 	}
 }
