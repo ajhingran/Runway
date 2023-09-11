@@ -15,28 +15,29 @@ import (
 )
 
 const (
-	defaultDateFormat = "07-04-1999"
-	startDateArg      = 0
-	endDateArg        = 1
-	durationArg       = 2
-	startArg          = 3
-	endArg            = 4
-	travelerArg       = 5
-	classArg          = 6
-	tripTypeArg       = 7
-	stopArg           = 8
+	defaultDateFormat   = "07-04-1999"
+	startDateArg        = 0
+	endDateArg          = 1
+	durationArg         = 2
+	startArg            = 3
+	endArg              = 4
+	travelerArg         = 5
+	classArg            = 6
+	tripTypeArg         = 7
+	stopArg             = 8
+	excludedAirlinesArg = 9
 )
 
-func ProcessArgs() (flights.PriceGraphArgs, error) {
+func ProcessArgs() (flights.PriceGraphArgs, string, error) {
 	if len(os.Args) < 5 {
-		return flights.PriceGraphArgs{}, errors.New("missing minimum number of args")
+		return flights.PriceGraphArgs{}, "", errors.New("missing minimum number of args")
 	}
 	args := os.Args[1:]
 	startDate, err := time.Parse(defaultDateFormat, args[startDateArg])
 	endDate, err := time.Parse(defaultDateFormat, args[endDateArg])
 
 	if err != nil {
-		return flights.PriceGraphArgs{}, errors.New("unable to process date fields | mm-dd-yyyy")
+		return flights.PriceGraphArgs{}, "", errors.New("unable to process date fields | mm-dd-yyyy")
 	}
 
 	duration, _ := strconv.Atoi(args[durationArg])
@@ -44,7 +45,7 @@ func ProcessArgs() (flights.PriceGraphArgs, error) {
 	end := strings.Split(args[endArg], "-")
 
 	if len(start) == 0 || len(end) == 0 {
-		return flights.PriceGraphArgs{}, errors.New("need a start and destination city")
+		return flights.PriceGraphArgs{}, "", errors.New("need a start and destination city")
 	}
 
 	airports := false
@@ -52,14 +53,14 @@ func ProcessArgs() (flights.PriceGraphArgs, error) {
 		if strings.ToUpper(possibleCity) == possibleCity && len(possibleCity) == 3 {
 			airports = true
 		} else if airports {
-			return flights.PriceGraphArgs{}, errors.New("must be all airports in IATA formatting, ie SFO")
+			return flights.PriceGraphArgs{}, "", errors.New("must be all airports in IATA formatting, ie SFO")
 		}
 	}
 	for _, possibleCity := range end {
 		if strings.ToUpper(possibleCity) == possibleCity && len(possibleCity) == 3 {
 			airports = true
 		} else if airports {
-			return flights.PriceGraphArgs{}, errors.New("must be all airports in IATA formatting, ie SFO")
+			return flights.PriceGraphArgs{}, "", errors.New("must be all airports in IATA formatting, ie SFO")
 		}
 	}
 
@@ -115,6 +116,11 @@ func ProcessArgs() (flights.PriceGraphArgs, error) {
 		}
 	}
 
+	excludedAirlines := ""
+	if args[excludedAirlinesArg] != "default" {
+		excludedAirlines = args[excludedAirlinesArg]
+	}
+
 	var cheapestArgs flights.PriceGraphArgs
 
 	if airports {
@@ -137,7 +143,7 @@ func ProcessArgs() (flights.PriceGraphArgs, error) {
 		}
 	}
 
-	return cheapestArgs, nil
+	return cheapestArgs, excludedAirlines, nil
 }
 
 func GetCheapestOffers(session *flights.Session, args flights.PriceGraphArgs) {
