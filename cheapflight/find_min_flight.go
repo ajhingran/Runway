@@ -1,4 +1,4 @@
-package main
+package cheapflight
 
 import (
 	"context"
@@ -27,7 +27,7 @@ const (
 	stopArg           = 8
 )
 
-func processArgs() (flights.PriceGraphArgs, error) {
+func ProcessArgs() (flights.PriceGraphArgs, error) {
 	if len(os.Args) < 5 {
 		return flights.PriceGraphArgs{}, errors.New("missing minimum number of args")
 	}
@@ -140,7 +140,7 @@ func processArgs() (flights.PriceGraphArgs, error) {
 	return cheapestArgs, nil
 }
 
-func getCheapestOffers(session *flights.Session, args flights.PriceGraphArgs) {
+func GetCheapestOffers(session *flights.Session, args flights.PriceGraphArgs) {
 	options := args.Options
 
 	priceGraphOffers, err := session.GetPriceGraph(
@@ -213,7 +213,7 @@ func getCheapestOffers(session *flights.Session, args flights.PriceGraphArgs) {
 	}
 }
 
-func getCheapestOffersFixedDates(session *flights.Session, args flights.PriceGraphArgs, excludedAirline string) {
+func GetCheapestOffersFixedDates(session *flights.Session, args flights.PriceGraphArgs, excludedAirline string) {
 	offers, _, err := session.GetOffers(
 		context.Background(),
 		flights.Args{
@@ -234,14 +234,18 @@ func getCheapestOffersFixedDates(session *flights.Session, args flights.PriceGra
 	var bestOffer flights.FullOffer
 	for _, o := range offers {
 		if o.Price != 0 && (bestOffer.Price == 0 || o.Price < bestOffer.Price) {
-			containsExcluded := false
-			for _, f := range o.Flight {
-				if f.AirlineName == excludedAirline {
-					containsExcluded = true
-					break
+			if len(excludedAirline) > 0 {
+				containsExcluded := false
+				for _, f := range o.Flight {
+					if f.AirlineName == excludedAirline {
+						containsExcluded = true
+						break
+					}
 				}
-			}
-			if !containsExcluded {
+				if !containsExcluded {
+					bestOffer = o
+				}
+			} else {
 				bestOffer = o
 			}
 		}
@@ -270,19 +274,4 @@ func getCheapestOffersFixedDates(session *flights.Session, args flights.PriceGra
 			"%s\n", int(bestOffer.Price), url)
 	}
 
-}
-
-func main() {
-	cheapestArgs, err := processArgs()
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-
-	session, err := flights.New()
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	getCheapestOffers(session, cheapestArgs)
 }
