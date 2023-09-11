@@ -213,6 +213,65 @@ func getCheapestOffers(session *flights.Session, args flights.PriceGraphArgs) {
 	}
 }
 
+func getCheapestOffersFixedDates(session *flights.Session, args flights.PriceGraphArgs, excludedAirline string) {
+	offers, _, err := session.GetOffers(
+		context.Background(),
+		flights.Args{
+			Date:        args.RangeStartDate,
+			ReturnDate:  args.RangeEndDate,
+			SrcCities:   args.SrcCities,
+			DstCities:   args.DstCities,
+			SrcAirports: args.SrcAirports,
+			DstAirports: args.DstAirports,
+			Options:     args.Options,
+		},
+	)
+	if err != nil || len(offers) == 0 {
+		fmt.Println(fmt.Errorf("unable to obtain offers for this flight request"))
+		return
+	}
+
+	var bestOffer flights.FullOffer
+	for _, o := range offers {
+		if o.Price != 0 && (bestOffer.Price == 0 || o.Price < bestOffer.Price) {
+			containsExcluded := false
+			for _, f := range o.Flight {
+				if f.AirlineName == excludedAirline {
+					containsExcluded = true
+					break
+				}
+			}
+			if !containsExcluded {
+				bestOffer = o
+			}
+		}
+	}
+
+	if bestOffer.Price == 0 {
+		fmt.Println(fmt.Errorf("failed to find a flight that does not contain an excluded airline"))
+		return
+	} else {
+		url, err := session.SerializeURL(
+			context.Background(),
+			flights.Args{
+				Date:        bestOffer.StartDate,
+				ReturnDate:  bestOffer.ReturnDate,
+				SrcAirports: []string{bestOffer.SrcAirportCode},
+				DstAirports: []string{bestOffer.DstAirportCode},
+				Options:     args.Options,
+			},
+		)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		fmt.Printf("%s %s\n", bestOffer.StartDate, bestOffer.ReturnDate)
+		fmt.Printf("Lowest offer found at: price %d USD\n"+
+			"%s\n", int(bestOffer.Price), url)
+	}
+
+}
+
 func main() {
 	cheapestArgs, err := processArgs()
 	if err != nil {
