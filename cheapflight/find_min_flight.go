@@ -146,8 +146,14 @@ func ProcessArgs() (flights.PriceGraphArgs, string, error) {
 	return cheapestArgs, excludedAirlines, nil
 }
 
-func GetCheapestOffers(session *flights.Session, args flights.PriceGraphArgs) {
+func GetCheapestOffersRange(args flights.PriceGraphArgs, excludedAirline string) {
 	options := args.Options
+
+	session, err := flights.New()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
 	priceGraphOffers, err := session.GetPriceGraph(
 		context.Background(),
@@ -157,8 +163,9 @@ func GetCheapestOffers(session *flights.Session, args flights.PriceGraphArgs) {
 		fmt.Println(err.Error())
 	}
 
+	var bestOffer flights.FullOffer
 	for _, priceGraphOffer := range priceGraphOffers {
-		offers, _, err := session.GetOffers(
+		offers, priceGraphLow, err := session.GetOffers(
 			context.Background(),
 			flights.Args{
 				Date:        priceGraphOffer.StartDate,
@@ -174,14 +181,28 @@ func GetCheapestOffers(session *flights.Session, args flights.PriceGraphArgs) {
 			fmt.Println(err.Error())
 		}
 
-		var bestOffer flights.FullOffer
 		for _, o := range offers {
-			if o.Price != 0 && (bestOffer.Price == 0 || o.Price < bestOffer.Price) {
-				bestOffer = o
+			if o.Price != 0 && (bestOffer.Price == 0 || o.Price < bestOffer.Price) && o.Price < priceGraphLow.Low {
+				if len(excludedAirline) > 0 {
+					containsExcluded := false
+					for _, f := range o.Flight {
+						if strings.Contains(excludedAirline, f.AirlineName) {
+							containsExcluded = true
+							break
+						}
+					}
+					if !containsExcluded {
+						bestOffer = o
+					}
+				} else {
+					bestOffer = o
+				}
 			}
 		}
+	}
 
-		_, priceRange, err := session.GetOffers(
+	if bestOffer.Price != 0 {
+		url, err := session.SerializeURL(
 			context.Background(),
 			flights.Args{
 				Date:        bestOffer.StartDate,
@@ -194,32 +215,22 @@ func GetCheapestOffers(session *flights.Session, args flights.PriceGraphArgs) {
 		if err != nil {
 			fmt.Println(err.Error())
 		}
-		if priceRange == nil {
-			fmt.Println(err.Error())
-		}
-
-		if bestOffer.Price < priceRange.Low {
-			url, err := session.SerializeURL(
-				context.Background(),
-				flights.Args{
-					Date:        bestOffer.StartDate,
-					ReturnDate:  bestOffer.ReturnDate,
-					SrcAirports: []string{bestOffer.SrcAirportCode},
-					DstAirports: []string{bestOffer.DstAirportCode},
-					Options:     options,
-				},
-			)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-			fmt.Printf("%s %s\n", bestOffer.StartDate, bestOffer.ReturnDate)
-			fmt.Printf("price %d\n", int(bestOffer.Price))
-			fmt.Println(url)
-		}
+		fmt.Printf("%s %s\n", bestOffer.StartDate, bestOffer.ReturnDate)
+		fmt.Printf("Lowest offer found at: price %d USD\n"+
+			"%s\n", int(bestOffer.Price), url)
+	} else {
+		fmt.Println(fmt.Errorf("failed to find a flight in that range"))
+		return
 	}
 }
 
-func GetCheapestOffersFixedDates(session *flights.Session, args flights.PriceGraphArgs, excludedAirline string) {
+func GetCheapestOffersFixedDates(args flights.PriceGraphArgs, excludedAirline string) {
+	session, err := flights.New()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
 	offers, _, err := session.GetOffers(
 		context.Background(),
 		flights.Args{
@@ -243,7 +254,7 @@ func GetCheapestOffersFixedDates(session *flights.Session, args flights.PriceGra
 			if len(excludedAirline) > 0 {
 				containsExcluded := false
 				for _, f := range o.Flight {
-					if f.AirlineName == excludedAirline {
+					if strings.Contains(excludedAirline, f.AirlineName) {
 						containsExcluded = true
 						break
 					}

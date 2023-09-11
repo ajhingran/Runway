@@ -4,21 +4,18 @@ import (
 	"fmt"
 
 	runway "github.com/ajhingran/runway/cheapflight"
-	"github.com/krisukox/google-flights-api/flights"
 )
 
 func main() {
-	cheapestArgs, err := runway.ProcessArgs()
+	cheapestArgs, excludedAirline, err := runway.ProcessArgs()
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 
-	session, err := flights.New()
-	if err != nil {
-		fmt.Println(err.Error())
-		return
+	if cheapestArgs.TripLength == -1 {
+		runway.GetCheapestOffersFixedDates(cheapestArgs, excludedAirline)
+	} else {
+		runway.GetCheapestOffersRange(cheapestArgs, excludedAirline)
 	}
-
-	runway.GetCheapestOffersFixedDates(session, cheapestArgs, "")
 }
