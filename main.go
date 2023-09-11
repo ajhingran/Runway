@@ -24,7 +24,7 @@ func main() {
 		}
 
 		if message == (runway.Message{}) {
-			return
+			fmt.Println(fmt.Errorf("unable to find flights at this time"))
 		} else {
 			messageString := sms.FormatMessageBody(message)
 			sms.SendSMS(messageString)
