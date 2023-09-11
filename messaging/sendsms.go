@@ -1,12 +1,13 @@
 package messaging
 
 import (
+	"fmt"
+	"os"
+
 	runway "github.com/ajhingran/runway/cheapflight"
 	twilio "github.com/twilio/twilio-go"
+	openapi "github.com/twilio/twilio-go/rest/api/v2010"
 )
-import openapi "github.com/twilio/twilio-go/rest/api/v2010"
-import "os"
-import "fmt"
 
 func SendSMS(alertMessage string) {
 	client := twilio.NewRestClient()
