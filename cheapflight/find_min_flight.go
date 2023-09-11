@@ -28,6 +28,13 @@ const (
 	excludedAirlinesArg = 9
 )
 
+type Message struct {
+	Price int
+	Url   string
+	Start string
+	End   string
+}
+
 func ProcessArgs() (flights.PriceGraphArgs, string, error) {
 	if len(os.Args) < 5 {
 		return flights.PriceGraphArgs{}, "", errors.New("missing minimum number of args")
@@ -146,13 +153,13 @@ func ProcessArgs() (flights.PriceGraphArgs, string, error) {
 	return cheapestArgs, excludedAirlines, nil
 }
 
-func GetCheapestOffersRange(args flights.PriceGraphArgs, excludedAirline string) {
+func GetCheapestOffersRange(args flights.PriceGraphArgs, excludedAirline string) Message {
 	options := args.Options
 
 	session, err := flights.New()
 	if err != nil {
 		fmt.Println(err.Error())
-		return
+		return Message{}
 	}
 
 	priceGraphOffers, err := session.GetPriceGraph(
@@ -161,6 +168,7 @@ func GetCheapestOffersRange(args flights.PriceGraphArgs, excludedAirline string)
 	)
 	if err != nil {
 		fmt.Println(err.Error())
+		return Message{}
 	}
 
 	var bestOffer flights.FullOffer
@@ -179,6 +187,7 @@ func GetCheapestOffersRange(args flights.PriceGraphArgs, excludedAirline string)
 		)
 		if err != nil {
 			fmt.Println(err.Error())
+			return Message{}
 		}
 
 		for _, o := range offers {
@@ -214,21 +223,25 @@ func GetCheapestOffersRange(args flights.PriceGraphArgs, excludedAirline string)
 		)
 		if err != nil {
 			fmt.Println(err.Error())
+			return Message{}
 		}
-		fmt.Printf("%s %s\n", bestOffer.StartDate, bestOffer.ReturnDate)
-		fmt.Printf("Lowest offer found at: price %d USD\n"+
-			"%s\n", int(bestOffer.Price), url)
+		return Message{
+			Price: int(bestOffer.Price),
+			Url:   url,
+			Start: bestOffer.StartDate.String(),
+			End:   bestOffer.ReturnDate.String(),
+		}
 	} else {
 		fmt.Println(fmt.Errorf("failed to find a flight in that range"))
-		return
+		return Message{}
 	}
 }
 
-func GetCheapestOffersFixedDates(args flights.PriceGraphArgs, excludedAirline string) {
+func GetCheapestOffersFixedDates(args flights.PriceGraphArgs, excludedAirline string) Message {
 	session, err := flights.New()
 	if err != nil {
 		fmt.Println(err.Error())
-		return
+		return Message{}
 	}
 
 	offers, _, err := session.GetOffers(
@@ -245,7 +258,7 @@ func GetCheapestOffersFixedDates(args flights.PriceGraphArgs, excludedAirline st
 	)
 	if err != nil || len(offers) == 0 {
 		fmt.Println(fmt.Errorf("unable to obtain offers for this flight request"))
-		return
+		return Message{}
 	}
 
 	var bestOffer flights.FullOffer
@@ -270,7 +283,7 @@ func GetCheapestOffersFixedDates(args flights.PriceGraphArgs, excludedAirline st
 
 	if bestOffer.Price == 0 {
 		fmt.Println(fmt.Errorf("failed to find a flight that does not contain an excluded airline"))
-		return
+		return Message{}
 	} else {
 		url, err := session.SerializeURL(
 			context.Background(),
@@ -284,11 +297,14 @@ func GetCheapestOffersFixedDates(args flights.PriceGraphArgs, excludedAirline st
 		)
 		if err != nil {
 			fmt.Println(err.Error())
-			return
+			return Message{}
 		}
-		fmt.Printf("%s %s\n", bestOffer.StartDate, bestOffer.ReturnDate)
-		fmt.Printf("Lowest offer found at: price %d USD\n"+
-			"%s\n", int(bestOffer.Price), url)
+		return Message{
+			Price: int(bestOffer.Price),
+			Url:   url,
+			Start: bestOffer.StartDate.String(),
+			End:   bestOffer.ReturnDate.String(),
+		}
 	}
 
 }

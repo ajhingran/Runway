@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	runway "github.com/ajhingran/runway/cheapflight"
+	sms "github.com/ajhingran/runway/messaging"
 )
 
 func main() {
@@ -13,9 +14,17 @@ func main() {
 		return
 	}
 
+	var message runway.Message
 	if cheapestArgs.TripLength == -1 {
-		runway.GetCheapestOffersFixedDates(cheapestArgs, excludedAirline)
+		message = runway.GetCheapestOffersFixedDates(cheapestArgs, excludedAirline)
 	} else {
-		runway.GetCheapestOffersRange(cheapestArgs, excludedAirline)
+		message = runway.GetCheapestOffersRange(cheapestArgs, excludedAirline)
+	}
+
+	if message == (runway.Message{}) {
+		return
+	} else {
+		messageString := sms.FormatMessageBody(message)
+		sms.SendSMS(messageString)
 	}
 }
