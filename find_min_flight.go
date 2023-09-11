@@ -17,23 +17,32 @@ import (
 
 const (
 	defaultDateFormat = "07-04-1999"
+	startDateArg      = 0
+	endDateArg        = 1
+	durationArg       = 2
+	startArg          = 3
+	endArg            = 4
+	travelerArg       = 5
+	classArg          = 6
+	tripTypeArg       = 7
+	stopArg           = 8
 )
 
 func processArgs() (string, error) {
-	if len(os.Args) < 6 {
+	if len(os.Args) < 5 {
 		return "", errors.New("missing minimum number of args")
 	}
 	args := os.Args[1:]
-	startDate, err := time.Parse(defaultDateFormat, args[0])
-	endDate, err := time.Parse(defaultDateFormat, args[1])
+	startDate, err := time.Parse(defaultDateFormat, args[startDateArg])
+	endDate, err := time.Parse(defaultDateFormat, args[endDateArg])
 
 	if err != nil {
 		return "", errors.New("unable to process date fields | mm-dd-yyyy")
 	}
 
-	duration, _ := strconv.Atoi(args[2])
-	start := strings.Split(args[3], "-")
-	end := strings.Split(args[4], "-")
+	duration, _ := strconv.Atoi(args[durationArg])
+	start := strings.Split(args[startArg], "-")
+	end := strings.Split(args[endArg], "-")
 
 	if len(start) == 0 || len(end) == 0 {
 		return "", errors.New("need a start and destination city")
@@ -69,17 +78,17 @@ func processArgs() (string, error) {
 		Lang:      language.English,
 	}
 
-	if args[6] != "default" {
-		passengerNum, err := strconv.Atoi(args[6])
+	if args[travelerArg] != "default" {
+		passengerNum, err := strconv.Atoi(args[travelerArg])
 		if err != nil {
 			options.Travelers = flights.Travelers{Adults: passengerNum}
 		}
 	}
 
-	if args[7] != "default" {
-		class, err := strconv.Atoi(args[7])
+	if args[classArg] != "default" {
+		class, err := strconv.ParseInt(args[classArg], 10, 64)
 		if err != nil {
-			switch int64(class) {
+			switch class {
 			case int64(flights.PremiumEconomy):
 				options.Class = flights.PremiumEconomy
 			case int64(flights.Business):
@@ -92,57 +101,64 @@ func processArgs() (string, error) {
 		}
 	}
 
-	if args[8] != "default" {
-		passengerNum, err := strconv.Atoi(args[6])
+	if args[tripTypeArg] == "OneWay" {
+		options.TripType = flights.OneWay
+	}
+
+	if args[stopArg] != "default" {
+		stops, err := strconv.ParseInt(args[stopArg], 10, 64)
 		if err != nil {
-			options.Travelers = flights.Travelers{Adults: passengerNum}
+			switch stops {
+			case int64(flights.Nonstop):
+				options.Stops = flights.Nonstop
+			case int64(flights.Stop1):
+				options.Stops = flights.Stop1
+			case int64(flights.Stop2):
+				options.Stops = flights.Stop2
+			default:
+				options.Stops = flights.AnyStops
+			}
 		}
 	}
 
-	if args[9] != "default" {
-		passengerNum, err := strconv.Atoi(args[6])
-		if err != nil {
-			options.Travelers = flights.Travelers{Adults: passengerNum}
-		}
-	}
+	var cheapestArgs flights.PriceGraphArgs
 
 	if airports {
-		getCheapestOffers(session, startDate, endDate, duration, nil, nil, start, end, language.English)
+		cheapestArgs = flights.PriceGraphArgs{
+			RangeStartDate: startDate,
+			RangeEndDate:   endDate,
+			TripLength:     duration,
+			SrcAirports:    start,
+			DstAirports:    end,
+			Options:        options,
+		}
 	} else {
-		getCheapestOffers(session, startDate, endDate, duration, start, end, nil, nil, language.English)
+		cheapestArgs = flights.PriceGraphArgs{
+			RangeStartDate: startDate,
+			RangeEndDate:   endDate,
+			TripLength:     duration,
+			SrcCities:      start,
+			DstCities:      end,
+			Options:        options,
+		}
 	}
+
+	getCheapestOffers(session, cheapestArgs)
 
 	return "", err
 }
 
 func getCheapestOffers(
 	session *flights.Session,
-	rangeStartDate, rangeEndDate time.Time,
-	tripLength int,
-	srcCities, dstCities, srcAirports, dstAirports []string,
-	lang language.Tag,
+	args flights.PriceGraphArgs,
 ) {
 	logger := log.New(os.Stdout, "", 0)
 
-	options := flights.Options{
-		Travelers: flights.Travelers{Adults: 1},
-		Currency:  currency.USD,
-		Stops:     flights.AnyStops,
-		Class:     flights.Economy,
-		TripType:  flights.RoundTrip,
-		Lang:      lang,
-	}
+	options := args.Options
 
 	priceGraphOffers, err := session.GetPriceGraph(
 		context.Background(),
-		flights.PriceGraphArgs{
-			RangeStartDate: rangeStartDate,
-			RangeEndDate:   rangeEndDate,
-			TripLength:     tripLength,
-			SrcAirports:    srcAirports,
-			DstAirports:    dstAirports,
-			Options:        options,
-		},
+		args,
 	)
 	if err != nil {
 		logger.Fatal(err)
@@ -154,8 +170,10 @@ func getCheapestOffers(
 			flights.Args{
 				Date:        priceGraphOffer.StartDate,
 				ReturnDate:  priceGraphOffer.ReturnDate,
-				SrcAirports: srcAirports,
-				DstAirports: dstAirports,
+				SrcCities:   args.SrcCities,
+				DstCities:   args.DstCities,
+				SrcAirports: args.SrcAirports,
+				DstAirports: args.DstAirports,
 				Options:     options,
 			},
 		)
@@ -211,22 +229,10 @@ func getCheapestOffers(
 func main() {
 	t := time.Now()
 
-	session, err := flights.New()
+	_, err := flights.New()
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	getCheapestOffers(
-		session,
-		time.Now().AddDate(0, 0, 60),
-		time.Now().AddDate(0, 0, 90),
-		7,
-		nil,
-		nil,
-		[]string{"MSN"},
-		[]string{"DCA"},
-		language.English,
-	)
 
 	fmt.Println(time.Since(t))
 }
