@@ -30,5 +30,6 @@ func FormatMessageBody(m runway.Message) string {
 		"Flying out on %s\n"+
 		"Returning on %s\n"+
 		"Check it out here: %s", m.Price, m.Start, m.End, m.Url)
+	fmt.Println(message)
 	return message
 }

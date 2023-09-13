@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	defaultDateFormat   = "07-04-1999"
+	defaultDateFormat   = "01-02-2006"
 	startDateArg        = 0
 	endDateArg          = 1
 	durationArg         = 2
@@ -36,15 +36,16 @@ type Message struct {
 }
 
 func ProcessArgs() (flights.PriceGraphArgs, string, error) {
-	if len(os.Args) < 5 {
+	if len(os.Args) != 11 {
 		return flights.PriceGraphArgs{}, "", errors.New("missing minimum number of args")
 	}
+
 	args := os.Args[1:]
 	startDate, err := time.Parse(defaultDateFormat, args[startDateArg])
 	endDate, err := time.Parse(defaultDateFormat, args[endDateArg])
 
 	if err != nil {
-		return flights.PriceGraphArgs{}, "", errors.New("unable to process date fields | mm-dd-yyyy")
+		return flights.PriceGraphArgs{}, "", err
 	}
 
 	duration, _ := strconv.Atoi(args[durationArg])
@@ -89,7 +90,7 @@ func ProcessArgs() (flights.PriceGraphArgs, string, error) {
 
 	if args[classArg] != "default" {
 		class, err := strconv.ParseInt(args[classArg], 10, 64)
-		if err != nil {
+		if err == nil {
 			switch class {
 			case int64(flights.PremiumEconomy):
 				options.Class = flights.PremiumEconomy
@@ -109,7 +110,7 @@ func ProcessArgs() (flights.PriceGraphArgs, string, error) {
 
 	if args[stopArg] != "default" {
 		stops, err := strconv.ParseInt(args[stopArg], 10, 64)
-		if err != nil {
+		if err == nil {
 			switch stops {
 			case int64(flights.Nonstop):
 				options.Stops = flights.Nonstop
@@ -166,6 +167,7 @@ func GetCheapestOffersRange(args flights.PriceGraphArgs, excludedAirline string)
 		context.Background(),
 		args,
 	)
+
 	if err != nil {
 		fmt.Println(err.Error())
 		return Message{}
@@ -173,7 +175,7 @@ func GetCheapestOffersRange(args flights.PriceGraphArgs, excludedAirline string)
 
 	var bestOffer flights.FullOffer
 	for _, priceGraphOffer := range priceGraphOffers {
-		offers, priceGraphLow, err := session.GetOffers(
+		offers, _, err := session.GetOffers(
 			context.Background(),
 			flights.Args{
 				Date:        priceGraphOffer.StartDate,
@@ -185,13 +187,13 @@ func GetCheapestOffersRange(args flights.PriceGraphArgs, excludedAirline string)
 				Options:     options,
 			},
 		)
+
 		if err != nil {
 			fmt.Println(err.Error())
 			return Message{}
 		}
-
 		for _, o := range offers {
-			if o.Price != 0 && (bestOffer.Price == 0 || o.Price < bestOffer.Price) && o.Price < priceGraphLow.Low {
+			if o.Price != 0 && (bestOffer.Price == 0 || o.Price < bestOffer.Price) {
 				if len(excludedAirline) > 0 {
 					containsExcluded := false
 					for _, f := range o.Flight {
