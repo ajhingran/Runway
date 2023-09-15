@@ -5,4 +5,4 @@ run:
 	./main 09-15-2023 09-18-2023 -1 MSN DCA
 
 composite:
-	go run main.go 09-15-2023 10-18-2023 7 MSN SFO default 4 default default Frontier
+	go run main.go 09-18-2023 09-21-2023 -1 MSN SFO default default default default Frontier

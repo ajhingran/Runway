@@ -56,19 +56,21 @@ func ProcessArgs() (flights.PriceGraphArgs, string, error) {
 		return flights.PriceGraphArgs{}, "", errors.New("need a start and destination city")
 	}
 
-	airports := false
+	var airportsSrc, citiesSrc []string
 	for _, possibleCity := range start {
 		if strings.ToUpper(possibleCity) == possibleCity && len(possibleCity) == 3 {
-			airports = true
-		} else if airports {
-			return flights.PriceGraphArgs{}, "", errors.New("must be all airports in IATA formatting, ie SFO")
+			airportsSrc = append(airportsSrc, possibleCity)
+		} else {
+			citiesSrc = append(citiesSrc, possibleCity)
 		}
 	}
+
+	var airportsDst, citiesDst []string
 	for _, possibleCity := range end {
 		if strings.ToUpper(possibleCity) == possibleCity && len(possibleCity) == 3 {
-			airports = true
-		} else if airports {
-			return flights.PriceGraphArgs{}, "", errors.New("must be all airports in IATA formatting, ie SFO")
+			airportsDst = append(airportsDst, possibleCity)
+		} else {
+			citiesDst = append(citiesDst, possibleCity)
 		}
 	}
 
@@ -129,26 +131,15 @@ func ProcessArgs() (flights.PriceGraphArgs, string, error) {
 		excludedAirlines = args[excludedAirlinesArg]
 	}
 
-	var cheapestArgs flights.PriceGraphArgs
-
-	if airports {
-		cheapestArgs = flights.PriceGraphArgs{
-			RangeStartDate: startDate,
-			RangeEndDate:   endDate,
-			TripLength:     duration,
-			SrcAirports:    start,
-			DstAirports:    end,
-			Options:        options,
-		}
-	} else {
-		cheapestArgs = flights.PriceGraphArgs{
-			RangeStartDate: startDate,
-			RangeEndDate:   endDate,
-			TripLength:     duration,
-			SrcCities:      start,
-			DstCities:      end,
-			Options:        options,
-		}
+	cheapestArgs := flights.PriceGraphArgs{
+		RangeStartDate: startDate,
+		RangeEndDate:   endDate,
+		TripLength:     duration,
+		SrcCities:      citiesSrc,
+		DstCities:      citiesDst,
+		SrcAirports:    airportsSrc,
+		DstAirports:    airportsDst,
+		Options:        options,
 	}
 
 	return cheapestArgs, excludedAirlines, nil

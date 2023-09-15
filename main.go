@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
-	"time"
-
 	runway "github.com/ajhingran/runway/cheapflight"
 	sms "github.com/ajhingran/runway/messaging"
+	"time"
 )
 
 func main() {
@@ -31,4 +30,5 @@ func main() {
 		}
 		time.Sleep(12 * time.Hour)
 	}
+
 }
