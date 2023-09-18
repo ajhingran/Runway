@@ -6,12 +6,14 @@ import (
 	sms "github.com/ajhingran/runway/messaging"
 	"math"
 	"time"
+	"os"
 )
 
-func main() {
+func main(){
 	cheapestArgs, excludedAirline, target, err := runway.ProcessArgs()
 	if err != nil {
 		fmt.Println(err.Error())
+		os.exit(1)
 		return
 	}
 
@@ -37,5 +39,5 @@ func main() {
 		}
 		time.Sleep(12 * time.Hour)
 	}
-
+	os.exit(0)
 }
