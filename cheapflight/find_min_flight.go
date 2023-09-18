@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -26,6 +27,7 @@ const (
 	tripTypeArg         = 7
 	stopArg             = 8
 	excludedAirlinesArg = 9
+	targetArg           = 10
 )
 
 type Message struct {
@@ -35,9 +37,9 @@ type Message struct {
 	End   string
 }
 
-func ProcessArgs() (flights.PriceGraphArgs, string, error) {
+func ProcessArgs() (flights.PriceGraphArgs, string, float64, error) {
 	if len(os.Args) != 11 {
-		return flights.PriceGraphArgs{}, "", errors.New("missing minimum number of args")
+		return flights.PriceGraphArgs{}, "", -1, errors.New("missing minimum number of args")
 	}
 
 	args := os.Args[1:]
@@ -45,7 +47,7 @@ func ProcessArgs() (flights.PriceGraphArgs, string, error) {
 	endDate, err := time.Parse(defaultDateFormat, args[endDateArg])
 
 	if err != nil {
-		return flights.PriceGraphArgs{}, "", err
+		return flights.PriceGraphArgs{}, "", -1, err
 	}
 
 	duration, _ := strconv.Atoi(args[durationArg])
@@ -53,7 +55,7 @@ func ProcessArgs() (flights.PriceGraphArgs, string, error) {
 	end := strings.Split(args[endArg], "-")
 
 	if len(start) == 0 || len(end) == 0 {
-		return flights.PriceGraphArgs{}, "", errors.New("need a start and destination city")
+		return flights.PriceGraphArgs{}, "", -1, errors.New("need a start and destination city")
 	}
 
 	var airportsSrc, citiesSrc []string
@@ -131,6 +133,14 @@ func ProcessArgs() (flights.PriceGraphArgs, string, error) {
 		excludedAirlines = args[excludedAirlinesArg]
 	}
 
+	target := math.Inf(1)
+	if args[targetArg] != "default" {
+		target, err = strconv.ParseFloat(args[targetArg], 64)
+		if err != nil {
+			return flights.PriceGraphArgs{}, "", -1, errors.New("need a valid target price")
+		}
+	}
+
 	cheapestArgs := flights.PriceGraphArgs{
 		RangeStartDate: startDate,
 		RangeEndDate:   endDate,
@@ -142,7 +152,7 @@ func ProcessArgs() (flights.PriceGraphArgs, string, error) {
 		Options:        options,
 	}
 
-	return cheapestArgs, excludedAirlines, nil
+	return cheapestArgs, excludedAirlines, target, nil
 }
 
 func GetCheapestOffersRange(args flights.PriceGraphArgs, excludedAirline string) Message {

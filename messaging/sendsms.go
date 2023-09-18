@@ -33,3 +33,12 @@ func FormatMessageBody(m runway.Message) string {
 	fmt.Println(message)
 	return message
 }
+
+func FormatMessageBodyTarget(m runway.Message, target float64) string {
+	message := fmt.Sprintf("Flight under target %.2f: price %d USD\n"+
+		"Flying out on %s\n"+
+		"Returning on %s\n"+
+		"Check it out here: %s", target, m.Price, m.Start, m.End, m.Url)
+	fmt.Println(message)
+	return message
+}
