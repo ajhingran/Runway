@@ -38,7 +38,7 @@ type Message struct {
 }
 
 func ProcessArgs() (flights.PriceGraphArgs, string, float64, error) {
-	if len(os.Args) != 11 {
+	if len(os.Args) != 12 {
 		return flights.PriceGraphArgs{}, "", -1, errors.New("missing minimum number of args")
 	}
 
