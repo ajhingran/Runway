@@ -30,6 +30,8 @@ const (
 	targetArg           = 10
 )
 
+//Todo target price in fixed date and range
+
 type Message struct {
 	Price int
 	Url   string
