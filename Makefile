@@ -1,8 +1,11 @@
 build:
-	go build -o runway main.go
+	go build -o runway user_request.go
 
 run:
-	./main 09-15-2023 09-18-2023 -1 MSN DCA
+	./runway 09-15-2023 09-18-2023 -1 MSN DCA
 
 composite:
-	go run main.go 10-06-2023 10-09-2023 -1 DCA SFO default default default default Frontier 700
+	go run user_request.go 04-11-2024 04-15-2024 -1 MSN-ORD DCA default default default default Frontier 700
+
+clean:
+	rm -f runway

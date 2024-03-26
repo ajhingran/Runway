@@ -1,16 +1,15 @@
-package main
+package cheapflight
 
 import (
 	"fmt"
-	runway "github.com/ajhingran/runway/cheapflight"
 	sms "github.com/ajhingran/runway/messaging"
 	"math"
 	"os"
 	"time"
 )
 
-func main() {
-	cheapestArgs, excludedAirline, target, err := runway.ProcessArgs()
+func ProcessUserRequest() {
+	cheapestArgs, excludedAirline, target, err := ProcessArgs()
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
@@ -19,14 +18,14 @@ func main() {
 
 	minFound := math.Inf(1)
 	for time.Now().Before(cheapestArgs.RangeStartDate) {
-		var message runway.Message
+		var message Message
 		if cheapestArgs.TripLength == -1 {
-			message = runway.GetCheapestOffersFixedDates(cheapestArgs, excludedAirline)
+			message = GetCheapestOffersFixedDates(cheapestArgs, excludedAirline)
 		} else {
-			message = runway.GetCheapestOffersRange(cheapestArgs, excludedAirline)
+			message = GetCheapestOffersRange(cheapestArgs, excludedAirline)
 		}
 
-		if message == (runway.Message{}) {
+		if message == (Message{}) {
 			fmt.Println(fmt.Errorf("unable to find flights at this time"))
 		} else {
 			if float64(message.Price) < minFound {
@@ -39,5 +38,4 @@ func main() {
 		}
 		time.Sleep(12 * time.Hour)
 	}
-	os.Exit(0)
 }
