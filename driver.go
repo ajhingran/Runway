@@ -4,10 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	runway "github.com/ajhingran/runway/cheapflight"
+	"log"
 	"net"
 	"os"
 	"reflect"
 	"strconv"
+)
+
+const (
+	protocol = "tcp"
+	address  = ":8080"
 )
 
 type UserRequest struct {
@@ -27,15 +33,28 @@ func requestHandler(conn net.Conn) {
 	defer conn.Close()
 	// Read incoming data
 	var user_request UserRequest
-	size_buf := make([]byte, 8)
+	size_buf := make([]byte, 4)
 
-	_, _ = conn.Read(size_buf)
+	_, err := conn.Read(size_buf)
+	if err != nil {
+		conn.Write([]byte("Error in reading request size"))
+		return
+	}
+
 	size_of_req, _ := strconv.Atoi(string(size_buf))
 	fmt.Printf("%d\n\n", size_of_req)
 	request_buf := make([]byte, size_of_req)
-	_, _ = conn.Read(request_buf)
+	_, err = conn.Read(request_buf)
+	if err != nil {
+		conn.Write([]byte("Error in reading request"))
+		return
+	}
 
-	_ = json.Unmarshal(request_buf, &user_request)
+	err = json.Unmarshal(request_buf, &user_request)
+	if err != nil {
+		conn.Write([]byte("Request format incorrect"))
+		return
+	}
 
 	ureq := reflect.ValueOf(user_request)
 	args := []string{os.Args[0]}
@@ -47,4 +66,18 @@ func requestHandler(conn net.Conn) {
 	}
 	// Print the incoming data
 	go runway.ProcessUserRequest()
+}
+
+func main() {
+	port, err := net.Listen(protocol, address)
+	if err != nil {
+		log.Fatalln("Unable to bind to port")
+	}
+	for {
+		conn, err := port.Accept()
+		if err != nil {
+			continue
+		}
+		go requestHandler(conn)
+	}
 }
