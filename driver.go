@@ -69,6 +69,10 @@ func requestHandler(conn net.Conn) {
 }
 
 func main() {
+	if len(os.Args) != 1 {
+		go runway.ProcessUserRequest()
+	}
+
 	port, err := net.Listen(protocol, address)
 	if err != nil {
 		log.Fatalln("Unable to bind to port")
