@@ -45,6 +45,8 @@ func processRequest(w http.ResponseWriter, r *http.Request) {
 			args = append(args, field.String())
 		}
 	}
+
+	os.Args = args
 	// Print the incoming data
 	go runway.ProcessUserRequest()
 	w.WriteHeader(http.StatusOK)
