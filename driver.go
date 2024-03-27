@@ -2,18 +2,14 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	runway "github.com/ajhingran/runway/cheapflight"
-	"log"
-	"net"
+	"net/http"
 	"os"
 	"reflect"
-	"strconv"
 )
 
 const (
-	protocol = "tcp"
-	address  = ":8080"
+	address = ":8080"
 )
 
 type UserRequest struct {
@@ -29,30 +25,15 @@ type UserRequest struct {
 	Target           string `json:"target"`
 }
 
-func requestHandler(conn net.Conn) {
-	defer conn.Close()
+func processRequest(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	// Read incoming data
 	var userRequest UserRequest
-	sizeBuf := make([]byte, 4)
 
-	_, err := conn.Read(sizeBuf)
+	err := json.NewDecoder(r.Body).Decode(&userRequest)
 	if err != nil {
-		conn.Write([]byte("Error in reading request size"))
-		return
-	}
-
-	sizeOfReq, _ := strconv.Atoi(string(sizeBuf))
-	fmt.Printf("%d\n\n", sizeOfReq)
-	requestBuf := make([]byte, sizeOfReq)
-	_, err = conn.Read(requestBuf)
-	if err != nil {
-		conn.Write([]byte("Error in reading request"))
-		return
-	}
-
-	err = json.Unmarshal(requestBuf, &userRequest)
-	if err != nil {
-		conn.Write([]byte("Request format incorrect"))
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.Write([]byte("402 - Unable to process POST"))
 		return
 	}
 
@@ -66,6 +47,22 @@ func requestHandler(conn net.Conn) {
 	}
 	// Print the incoming data
 	go runway.ProcessUserRequest()
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Request Configured"))
+}
+
+func handleHello(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Welcome to Runway"))
+}
+
+func handleRequest(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		processRequest(w, r)
+		return
+	}
+
+	w.WriteHeader(http.StatusBadRequest)
+	w.Write([]byte("400 - Need to issue POST request"))
 }
 
 func main() {
@@ -73,15 +70,8 @@ func main() {
 		go runway.ProcessUserRequest()
 	}
 
-	port, err := net.Listen(protocol, address)
-	if err != nil {
-		log.Fatalln("Unable to bind to port")
-	}
-	for {
-		conn, err := port.Accept()
-		if err != nil {
-			continue
-		}
-		go requestHandler(conn)
-	}
+	http.HandleFunc("/", handleHello)
+	http.HandleFunc("/request", handleRequest)
+	http.HandleFunc("/requests", handleRequest)
+	http.ListenAndServe(address, nil)
 }
