@@ -1,12 +1,10 @@
-package messaging
+package cheapflight
 
 import (
 	"fmt"
-	"os"
-
-	runway "github.com/ajhingran/runway/cheapflight"
 	twilio "github.com/twilio/twilio-go"
 	openapi "github.com/twilio/twilio-go/rest/api/v2010"
+	"os"
 )
 
 func SendSMS(alertMessage string) {
@@ -25,7 +23,7 @@ func SendSMS(alertMessage string) {
 	}
 }
 
-func FormatMessageBody(m runway.Message) string {
+func FormatMessageBody(m Message) string {
 	message := fmt.Sprintf("Lowest offer found at: price %d USD\n"+
 		"Flying out on %s\n"+
 		"Returning on %s\n"+
@@ -34,7 +32,7 @@ func FormatMessageBody(m runway.Message) string {
 	return message
 }
 
-func FormatMessageBodyTarget(m runway.Message, target float64) string {
+func FormatMessageBodyTarget(m Message, target float64) string {
 	message := fmt.Sprintf("Flight under target %.2f: price %d USD\n"+
 		"Flying out on %s\n"+
 		"Returning on %s\n"+

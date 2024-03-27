@@ -2,7 +2,6 @@ package cheapflight
 
 import (
 	"fmt"
-	sms "github.com/ajhingran/runway/messaging"
 	"math"
 	"os"
 	"time"
@@ -29,11 +28,11 @@ func ProcessUserRequest() {
 			fmt.Println(fmt.Errorf("unable to find flights at this time"))
 		} else {
 			if float64(message.Price) < minFound {
-				messageString := sms.FormatMessageBody(message)
-				sms.SendSMS(messageString)
+				messageString := FormatMessageBody(message)
+				SendSMS(messageString)
 			} else if float64(message.Price) < target {
-				messageString := sms.FormatMessageBodyTarget(message, target)
-				sms.SendSMS(messageString)
+				messageString := FormatMessageBodyTarget(message, target)
+				SendSMS(messageString)
 			}
 		}
 		time.Sleep(12 * time.Hour)

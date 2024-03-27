@@ -32,31 +32,31 @@ type UserRequest struct {
 func requestHandler(conn net.Conn) {
 	defer conn.Close()
 	// Read incoming data
-	var user_request UserRequest
-	size_buf := make([]byte, 4)
+	var userRequest UserRequest
+	sizeBuf := make([]byte, 4)
 
-	_, err := conn.Read(size_buf)
+	_, err := conn.Read(sizeBuf)
 	if err != nil {
 		conn.Write([]byte("Error in reading request size"))
 		return
 	}
 
-	size_of_req, _ := strconv.Atoi(string(size_buf))
-	fmt.Printf("%d\n\n", size_of_req)
-	request_buf := make([]byte, size_of_req)
-	_, err = conn.Read(request_buf)
+	sizeOfReq, _ := strconv.Atoi(string(sizeBuf))
+	fmt.Printf("%d\n\n", sizeOfReq)
+	requestBuf := make([]byte, sizeOfReq)
+	_, err = conn.Read(requestBuf)
 	if err != nil {
 		conn.Write([]byte("Error in reading request"))
 		return
 	}
 
-	err = json.Unmarshal(request_buf, &user_request)
+	err = json.Unmarshal(requestBuf, &userRequest)
 	if err != nil {
 		conn.Write([]byte("Request format incorrect"))
 		return
 	}
 
-	ureq := reflect.ValueOf(user_request)
+	ureq := reflect.ValueOf(userRequest)
 	args := []string{os.Args[0]}
 	for i := 0; i < ureq.NumField(); i++ {
 		field := ureq.Field(i)
