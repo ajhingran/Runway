@@ -8,10 +8,10 @@ import (
 )
 
 func ProcessUserRequest() {
+	fmt.Println(os.Args)
 	cheapestArgs, excludedAirline, target, err := ProcessArgs()
 	if err != nil {
 		fmt.Println(err.Error())
-		os.Exit(1)
 		return
 	}
 

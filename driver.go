@@ -18,9 +18,10 @@ type UserRequest struct {
 	TripLength       string `json:"trip-length"`
 	Src              string `json:"trip-src"`
 	Dst              string `json:"trip-dst"`
-	Stops            string `json:"stops"`
+	Travelers        string `json:"travelers"`
 	Class            string `json:"class"`
 	TripType         string `json:"trip-type"`
+	Stops            string `json:"stops"`
 	ExcludedAirlines string `json:"excluded-airlines"` // Added field for excluded airlines
 	Target           string `json:"target"`
 }
@@ -74,6 +75,6 @@ func main() {
 
 	http.HandleFunc("/", handleHello)
 	http.HandleFunc("/request", handleRequest)
-	http.HandleFunc("/requests", handleRequest)
+	http.HandleFunc("/request/", handleRequest)
 	http.ListenAndServe(address, nil)
 }
