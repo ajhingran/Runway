@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	runway "github.com/ajhingran/runway/cheapflight"
+	"io"
 	"net/http"
 	"os"
 	"reflect"
@@ -35,6 +36,24 @@ func processRequest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("402 - Unable to process POST"))
+		return
+	}
+
+	logFile, err := os.OpenFile("requests.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	defer logFile.Close()
+
+	reqBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.Write([]byte("402 - Unable to process POST"))
+		return
+	}
+
+	_, err = logFile.Write(reqBytes)
+	_, err = logFile.Write([]byte("|||")) //delimiter
+	if err != nil {
+		w.WriteHeader(http.StatusFailedDependency)
+		w.Write([]byte("424 - Unable to write to log"))
 		return
 	}
 

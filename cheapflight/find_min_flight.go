@@ -39,9 +39,9 @@ type Message struct {
 	End   string
 }
 
-func ProcessArgs() (flights.PriceGraphArgs, string, float64, error) {
-	if len(os.Args) != 12 {
-		return flights.PriceGraphArgs{}, "", -1, errors.New("missing minimum number of args")
+func ProcessArgs() (flights.PriceGraphArgs, string, float64, string, error) {
+	if len(os.Args) != 13 {
+		return flights.PriceGraphArgs{}, "", -1, "", errors.New("missing minimum number of args")
 	}
 
 	args := os.Args[1:]
@@ -49,7 +49,7 @@ func ProcessArgs() (flights.PriceGraphArgs, string, float64, error) {
 	endDate, err := time.Parse(defaultDateFormat, args[endDateArg])
 
 	if err != nil {
-		return flights.PriceGraphArgs{}, "", -1, err
+		return flights.PriceGraphArgs{}, "", -1, "", err
 	}
 
 	duration, _ := strconv.Atoi(args[durationArg])
@@ -57,7 +57,7 @@ func ProcessArgs() (flights.PriceGraphArgs, string, float64, error) {
 	end := strings.Split(args[endArg], "-")
 
 	if len(start) == 0 || len(end) == 0 {
-		return flights.PriceGraphArgs{}, "", -1, errors.New("need a start and destination city")
+		return flights.PriceGraphArgs{}, "", -1, "", errors.New("need a start and destination city")
 	}
 
 	var airportsSrc, citiesSrc []string
@@ -139,7 +139,7 @@ func ProcessArgs() (flights.PriceGraphArgs, string, float64, error) {
 	if args[targetArg] != "default" {
 		target, err = strconv.ParseFloat(args[targetArg], 64)
 		if err != nil {
-			return flights.PriceGraphArgs{}, "", -1, errors.New("need a valid target price")
+			return flights.PriceGraphArgs{}, "", -1, "", errors.New("need a valid target price")
 		}
 	}
 
@@ -154,7 +154,8 @@ func ProcessArgs() (flights.PriceGraphArgs, string, float64, error) {
 		Options:        options,
 	}
 
-	return cheapestArgs, excludedAirlines, target, nil
+	SMSNumber := os.Args[11]
+	return cheapestArgs, excludedAirlines, target, SMSNumber, nil
 }
 
 func GetCheapestOffersRange(args flights.PriceGraphArgs, excludedAirline string) Message {

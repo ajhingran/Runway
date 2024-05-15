@@ -20,6 +20,7 @@ type req struct {
 	Stops            string `json:"stops"`
 	ExcludedAirlines string `json:"excluded-airlines"` // Added field for excluded airlines
 	Target           string `json:"target"`
+	SMSNumber        string `json:"sms-number"`
 }
 
 func main() {
@@ -35,6 +36,7 @@ func main() {
 		Stops:            "0",
 		ExcludedAirlines: "default",
 		Target:           "default",
+		SMSNumber:        "###-###-####",
 	}
 	b := new(bytes.Buffer)
 	_ = json.NewEncoder(b).Encode(&newRequest)

@@ -9,7 +9,7 @@ import (
 
 func ProcessUserRequest() {
 	fmt.Println(os.Args)
-	cheapestArgs, excludedAirline, target, err := ProcessArgs()
+	cheapestArgs, excludedAirline, target, SMSNum, err := ProcessArgs()
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -29,10 +29,10 @@ func ProcessUserRequest() {
 		} else {
 			if float64(message.Price) < minFound {
 				messageString := FormatMessageBody(message)
-				SendSMS(messageString)
+				SendSMS(messageString, SMSNum)
 			} else if float64(message.Price) < target {
 				messageString := FormatMessageBodyTarget(message, target)
-				SendSMS(messageString)
+				SendSMS(messageString, SMSNum)
 			}
 		}
 		time.Sleep(12 * time.Hour)

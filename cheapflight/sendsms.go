@@ -4,14 +4,21 @@ import (
 	"fmt"
 	twilio "github.com/twilio/twilio-go"
 	openapi "github.com/twilio/twilio-go/rest/api/v2010"
+	"net/smtp"
 	"os"
 )
 
-func SendSMS(alertMessage string) {
+const (
+	smtpserver = "smtp.gmail.com"
+	smtpport   = "587"
+	smtppair   = smtpserver + ":" + smtpport
+)
+
+func SendSMS(alertMessage string, recipient string) {
 	client := twilio.NewRestClient()
 
 	params := &openapi.CreateMessageParams{}
-	params.SetTo(os.Getenv("TO_PHONE_NUMBER"))
+	params.SetTo(recipient)
 	params.SetFrom(os.Getenv("TWILIO_PHONE_NUMBER"))
 	params.SetBody(alertMessage)
 
@@ -20,6 +27,18 @@ func SendSMS(alertMessage string) {
 		fmt.Println(err.Error())
 	} else {
 		fmt.Println("SMS sent successfully!")
+	}
+}
+
+func SendEmail(alertMessage string, recipient []string) {
+	sender := os.Getenv("FROM_EMAIL")
+	pwd := os.Getenv("PWD")
+	auth := smtp.PlainAuth("", sender, pwd, smtpserver)
+	err := smtp.SendMail(smtppair, auth, sender, recipient, []byte(alertMessage))
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Email sent successfully!")
 	}
 }
 
